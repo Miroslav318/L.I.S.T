@@ -1,13 +1,11 @@
+using System.Security.Claims;
+using List.Assignments.DTOs;
 using List.Assignments.Models;
 using List.Assignments.Services;
-using List.Assignments.DTOs;
+using List.Common.Files;
 using List.Common.Models;
-
-using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using List.Common.Files;
-
 
 namespace List.Assignments.Controllers;
 
@@ -48,19 +46,12 @@ public class AssignmentsController : ControllerBase
     [HttpGet("course/{courseId}")]
     public async Task<IActionResult> GetByCourse(int courseId)
     {
-        var list = await _assignmentService.GetByCourseAsync(courseId);
+        var claim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (claim == null)
+            return BadRequest("Chyba identifikator pouzivatela.");
 
-        // mapovanie len na potrebné polia
-        var dto = list.Select(a => new
-        {
-            a.Id,
-            a.Name,
-            taskSetTypeId = a.TaskSetType.Id,
-            taskSetTypeName = a.TaskSetType.Name,
-            uploadEndTime = a.UploadEndTime
-        });
-
-        return Ok(dto);
+        var studentId = int.Parse(claim.Value);
+        return Ok(await _assignmentService.GetVisibleByCourseForStudentAsync(courseId, studentId));
     }
 
     [HttpPost]
@@ -68,11 +59,19 @@ public class AssignmentsController : ControllerBase
     {
         var claim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
         if (claim == null)
-            return BadRequest("Chýba identifikátor učiteľa.");
+            return BadRequest("Chyba identifikator ucitela.");
+
         var teacherId = int.Parse(claim.Value);
 
-        var createdAssignment = await _assignmentService.CreateAsync(dto, teacherId);
-        return Ok(new { id = createdAssignment.Id, name = createdAssignment.Name });
+        try
+        {
+            var createdAssignment = await _assignmentService.CreateAsync(dto, teacherId);
+            return Ok(new { id = createdAssignment.Id, name = createdAssignment.Name });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPost("{id}/clone")]
@@ -92,10 +91,17 @@ public class AssignmentsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult<AssignmentModel>> Update(int id, CreateAssignmentDto dto)
     {
-        var assignment = await _assignmentService.UpdateAsync(id, dto);
-        return assignment != null
-            ? Ok(new { id = assignment.Id, name = assignment.Name })
-            : BadRequest("Nepodarilo sa upraviť zadanie.");
+        try
+        {
+            var assignment = await _assignmentService.UpdateAsync(id, dto);
+            return assignment != null
+                ? Ok(new { id = assignment.Id, name = assignment.Name })
+                : BadRequest("Nepodarilo sa upravit zadanie.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpDelete("{id}")]
@@ -104,7 +110,7 @@ public class AssignmentsController : ControllerBase
         var deleted = await _assignmentService.DeleteAsync(id);
         return deleted != null
             ? Ok(new { id = deleted.Id, name = deleted.Name })
-            : BadRequest("Nepodarilo sa vymazať zadanie.");
+            : BadRequest("Nepodarilo sa vymazat zadanie.");
     }
 
     [HttpGet("{assignmentId}/assignmentName")]
@@ -118,29 +124,25 @@ public class AssignmentsController : ControllerBase
     [HttpGet("{id}/canUpload")]
     public async Task<IActionResult> CanUpload(int id)
     {
-        // Najprv overíme, či existuje také zadanie (môžeme použiť službu GetByIdAsync, alebo CanUploadSolutionAsync rovno vráti false, ak neexistuje)
         var assignment = await _assignmentService.GetByIdAsync(id);
         if (assignment == null)
-        {
             return NotFound($"Zadanie s ID {id} neexistuje.");
-        }
 
-        // Potom vrátime hodnotu UploadSolution (true/false)
-        var canUpload = await _assignmentService.CanUploadSolutionAsync(id);
+        var claim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (claim == null)
+            return BadRequest("Chyba identifikator pouzivatela.");
+
+        var canUpload = await _assignmentService.CanUploadSolutionAsync(id, int.Parse(claim.Value));
         return Ok(new { canUpload });
     }
 
     [HttpGet("{id}/maxpoints")]
     public async Task<IActionResult> CountMaxPoints(int id)
     {
-        // Najprv overíme, či existuje také zadanie (môžeme použiť službu GetByIdAsync, alebo CanUploadSolutionAsync rovno vráti false, ak neexistuje)
         var assignment = await _assignmentService.GetByIdAsync(id);
         if (assignment == null)
-        {
             return NotFound($"Zadanie s ID {id} neexistuje.");
-        }
 
-        // Potom vrátime hodnotu UploadSolution (true/false)
         var maxPoints = await _assignmentService.CalculateMaxPoints(id);
         return Ok(maxPoints);
     }
@@ -152,7 +154,7 @@ public class AssignmentsController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest("No file uploaded.");
 
-        var relativePath = await fileStorageService.SaveFileAsync(file, "assignments"); // saves to /uploads/tasks
+        var relativePath = await fileStorageService.SaveFileAsync(file, "assignments");
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
         var url = $"{baseUrl}/{relativePath.Replace("\\", "/")}";
 

@@ -101,6 +101,10 @@ namespace List.Courses.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created");
 
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("integer")
+                        .HasColumnName("group_id");
+
                     b.Property<int>("UserId")
                         .HasColumnType("integer")
                         .HasColumnName("user_id");
@@ -109,10 +113,99 @@ namespace List.Courses.Migrations
 
                     b.HasIndex("CourseId");
 
+                    b.HasIndex("GroupId");
+
                     b.HasIndex("UserId", "CourseId")
                         .IsUnique();
 
                     b.ToTable("participants", (string)null);
+                });
+
+            modelBuilder.Entity("List.Courses.Models.CourseGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer")
+                        .HasColumnName("course_id");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("groups", (string)null);
+                });
+
+            modelBuilder.Entity("List.Courses.Models.GroupRoom", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("capacity");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("integer")
+                        .HasColumnName("group_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("TeachersPlan")
+                        .HasColumnType("text")
+                        .HasColumnName("teachers_plan");
+
+                    b.Property<int>("TimeBegin")
+                        .HasColumnType("integer")
+                        .HasColumnName("time_begin");
+
+                    b.Property<int>("TimeDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("time_day");
+
+                    b.Property<int>("TimeEnd")
+                        .HasColumnType("integer")
+                        .HasColumnName("time_end");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
+
+                    b.ToTable("rooms", (string)null);
                 });
 
             modelBuilder.Entity("List.Courses.Models.Period", b =>
@@ -212,14 +305,52 @@ namespace List.Courses.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("List.Courses.Models.CourseGroup", "Group")
+                        .WithMany("Participants")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Course");
+
+                    b.Navigation("Group");
 
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("List.Courses.Models.CourseGroup", b =>
+                {
+                    b.HasOne("List.Courses.Models.Course", "Course")
+                        .WithMany("Groups")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("List.Courses.Models.GroupRoom", b =>
+                {
+                    b.HasOne("List.Courses.Models.CourseGroup", "Group")
+                        .WithMany("Rooms")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+                });
+
             modelBuilder.Entity("List.Courses.Models.Course", b =>
                 {
+                    b.Navigation("Groups");
+
                     b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("List.Courses.Models.CourseGroup", b =>
+                {
+                    b.Navigation("Participants");
+
+                    b.Navigation("Rooms");
                 });
 
             modelBuilder.Entity("List.Courses.Models.Period", b =>

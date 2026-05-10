@@ -18,11 +18,18 @@ public class TaskSetsDbContext(DbContextOptions<TaskSetsDbContext> options) : Db
         modelBuilder.Entity<Participant>(entity =>
         {
             entity.ToTable("participants", t => t.ExcludeFromMigrations());
+            entity.Ignore(e => e.Group);
         });
         
-        modelBuilder.Entity<Course>().ToTable((string?)null);
+        modelBuilder.Entity<Course>(entity =>
+        {
+            entity.ToTable((string?)null);
+            entity.Ignore(e => e.Groups);
+        });
         modelBuilder.Ignore<Period>();
         modelBuilder.Ignore<User>();
+        modelBuilder.Ignore<CourseGroup>();
+        modelBuilder.Ignore<GroupRoom>();
 
 
         modelBuilder.Entity<TaskSetType>(entity =>

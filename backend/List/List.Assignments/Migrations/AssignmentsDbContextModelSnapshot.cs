@@ -90,6 +90,43 @@ namespace List.Assignments.Migrations
                     b.ToTable("assignments");
                 });
 
+            modelBuilder.Entity("List.Assignments.Models.AssignmentGroupSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean")
+                        .HasColumnName("active");
+
+                    b.Property<int>("AssignmentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("assignment_id");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("integer")
+                        .HasColumnName("group_id");
+
+                    b.Property<DateTime?>("PublishStartTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("publish_start_time");
+
+                    b.Property<DateTime?>("UploadEndTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("upload_end_time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignmentId", "GroupId")
+                        .IsUnique();
+
+                    b.ToTable("assignment_group_settings");
+                });
+
             modelBuilder.Entity("List.Assignments.Models.AssignmentTaskRelModel", b =>
                 {
                     b.Property<int>("TaskId")
@@ -256,6 +293,10 @@ namespace List.Assignments.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("capacity");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
                     b.Property<DateTime?>("EnrollmentLimit")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("enrollment_limit");
@@ -317,6 +358,10 @@ namespace List.Assignments.Migrations
                     b.Property<DateTime>("Created")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created");
+
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("integer")
+                        .HasColumnName("group_id");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer")
@@ -603,6 +648,17 @@ namespace List.Assignments.Migrations
                     b.Navigation("Teacher");
                 });
 
+            modelBuilder.Entity("List.Assignments.Models.AssignmentGroupSetting", b =>
+                {
+                    b.HasOne("List.Assignments.Models.AssignmentModel", "Assignment")
+                        .WithMany("GroupSettings")
+                        .HasForeignKey("AssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Assignment");
+                });
+
             modelBuilder.Entity("List.Assignments.Models.AssignmentTaskRelModel", b =>
                 {
                     b.HasOne("List.Assignments.Models.AssignmentModel", "Assignment")
@@ -756,6 +812,8 @@ namespace List.Assignments.Migrations
 
             modelBuilder.Entity("List.Assignments.Models.AssignmentModel", b =>
                 {
+                    b.Navigation("GroupSettings");
+
                     b.Navigation("Solutions");
                 });
 

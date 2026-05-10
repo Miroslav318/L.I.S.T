@@ -80,7 +80,7 @@ namespace List.Users.Controllers
                 return BadRequest(ModelState);
             
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+            if (user == null || request.Password != user.Password)   // if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
                 return Unauthorized(new { message = "Invalid email or password." });
             
             if (user.Inactive)

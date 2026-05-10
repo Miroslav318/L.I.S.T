@@ -13,11 +13,12 @@ public interface IAssignmentService
 
     Task<AssignmentNameDto?> GetAssignmentNameAsync(int assignmentId);
     Task<List<AssignmentModel>> GetByCourseAsync(int courseId);
+    Task<List<AssignmentCourseViewDto>> GetVisibleByCourseForStudentAsync(int courseId, int studentId);
     Task<AssignmentModel> CreateAsync(CreateAssignmentDto assignmentDto, int teacherId);
     Task<AssignmentModel> CloneAsync(int id);
     Task<AssignmentModel?> UpdateAsync(int id, CreateAssignmentDto updatedAssignmentDto);
     Task<AssignmentModel?> DeleteAsync(int id);
-    Task<bool> CanUploadSolutionAsync(int assignmentId);
+    Task<bool> CanUploadSolutionAsync(int assignmentId, int studentId);
     Task<double?> CalculateMaxPoints(int assignmentId);
 
 }

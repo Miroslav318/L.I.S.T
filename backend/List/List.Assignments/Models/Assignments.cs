@@ -67,4 +67,7 @@ public class AssignmentModel
 
     [InverseProperty(nameof(SolutionModel.Assignment))]
     public ICollection<SolutionModel> Solutions { get; set; } = new List<SolutionModel>();
+
+    [InverseProperty(nameof(AssignmentGroupSetting.Assignment))]
+    public ICollection<AssignmentGroupSetting> GroupSettings { get; set; } = new List<AssignmentGroupSetting>();
 }

@@ -11,7 +11,8 @@ public class AssignmentsDbContextFactory : IDesignTimeDbContextFactory<Assignmen
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../List.Server"))
-            .AddJsonFile("appsettings.Development.json")
+            .AddJsonFile("appsettings.json")
+            .AddJsonFile("appsettings.Development.json", optional: true)
             .Build();
 
         var optionsBuilder = new DbContextOptionsBuilder<AssignmentsDbContext>();
