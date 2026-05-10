@@ -12,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import api from "../../../services/api";
 import { Course } from "../../Courses/Types/Course";
+import type { CourseGroup } from "../../Courses/Types/CourseGroup";
 import { TaskSetType } from "../../TaskSets/Types/TaskSetType";
 import { useNotification } from "../../../shared/components/NotificationContext";
 import { Assignment } from "../types/Assignment";
@@ -26,6 +27,13 @@ import "tinymce/plugins/lists";
 import "tinymce/plugins/code";
 import "tinymce/plugins/image";
 import "tinymce/plugins/table";
+
+type GroupSettingState = {
+  groupId: number;
+  active: boolean;
+  publishStartTime: string | null;
+  uploadEndTime: string | null;
+};
 
 type Props = {
   onCreated: (id: number) => void;
@@ -61,6 +69,8 @@ const AssignmentFormInfo = ({ onCreated, defaultValues, onUpdated }: Props) => {
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [taskSetTypes, setTaskSetTypes] = useState<TaskSetType[]>([]);
+  const [groups, setGroups] = useState<CourseGroup[]>([]);
+  const [groupSettings, setGroupSettings] = useState<GroupSettingState[]>([]);
   const { showNotification } = useNotification();
 
   useEffect(() => {
@@ -78,16 +88,50 @@ const AssignmentFormInfo = ({ onCreated, defaultValues, onUpdated }: Props) => {
       api
         .get<TaskSetType[]>(`/course-task-set-rel/${courseId}/types`)
         .then((res) => setTaskSetTypes(res.data));
+      api
+        .get<CourseGroup[]>(`/groups/course/${courseId}`)
+        .then((res) => {
+          setGroups(res.data);
+          setGroupSettings((prev) =>
+            res.data.map((group) => {
+              const existing = prev.find((item) => item.groupId === group.id);
+              const defaultSetting = defaultValues?.groupSettings?.find((item) => item.groupId === group.id);
+              return existing ?? {
+                groupId: group.id,
+                active: defaultSetting?.active ?? false,
+                publishStartTime: defaultSetting?.publishStartTime
+                  ? defaultSetting.publishStartTime.slice(0, 16)
+                  : null,
+                uploadEndTime: defaultSetting?.uploadEndTime
+                  ? defaultSetting.uploadEndTime.slice(0, 16)
+                  : null,
+              };
+            })
+          );
+        });
     } else {
       setTaskSetTypes([]);
+      setGroups([]);
+      setGroupSettings([]);
     }
-  }, [courseId]);
+  }, [courseId, defaultValues?.groupSettings]);
 
   useEffect(() => {
     if (taskSetTypes.length > 0 && defaultValues?.taskSetTypeId) {
       setTaskSetTypeId(defaultValues.taskSetTypeId);
     }
   }, [taskSetTypes, defaultValues?.taskSetTypeId]);
+
+  const updateGroupSetting = (
+    groupId: number,
+    patch: Partial<GroupSettingState>
+  ) => {
+    setGroupSettings((prev) =>
+      prev.map((item) =>
+        item.groupId === groupId ? { ...item, ...patch } : item
+      )
+    );
+  };
 
   const handleSubmit = async () => {
     if (!name || !courseId || !taskSetTypeId) {
@@ -135,6 +179,18 @@ const AssignmentFormInfo = ({ onCreated, defaultValues, onUpdated }: Props) => {
       pointsOverride,
       instructions: instructions.trim() ? instructions : null,
       internalComment: internalComment.trim() ? internalComment : null,
+      groupSettings: groupSettings
+        .filter((setting) => setting.active)
+        .map((setting) => ({
+          groupId: setting.groupId,
+          active: true,
+          publishStartTime: setting.publishStartTime
+            ? new Date(setting.publishStartTime).toISOString()
+            : null,
+          uploadEndTime: setting.uploadEndTime
+            ? new Date(setting.uploadEndTime).toISOString()
+            : null,
+        })),
     };
     console.log(defaultValues?.id);
     if (defaultValues?.id) {
@@ -220,6 +276,66 @@ const AssignmentFormInfo = ({ onCreated, defaultValues, onUpdated }: Props) => {
         fullWidth
       />
 
+      {groups.length > 0 && (
+        <Box>
+          <Box mb={1}>
+            <strong>Skupinove nastavenia</strong>
+          </Box>
+          <Box display="flex" flexDirection="column" gap={1}>
+            {groups.map((group) => {
+              const setting = groupSettings.find((item) => item.groupId === group.id);
+              return (
+                <Box
+                  key={group.id}
+                  display="grid"
+                  gridTemplateColumns={{ xs: "1fr", md: "220px 1fr 1fr" }}
+                  gap={1}
+                  alignItems="center"
+                >
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={setting?.active ?? false}
+                        onChange={(e) =>
+                          updateGroupSetting(group.id, { active: e.target.checked })
+                        }
+                      />
+                    }
+                    label={`${group.name} (${group.participantCount}/${group.capacity})`}
+                  />
+                  <TextField
+                    label="Publikovanie pre skupinu"
+                    type="datetime-local"
+                    size="small"
+                    InputLabelProps={{ shrink: true }}
+                    value={setting?.publishStartTime ?? ""}
+                    disabled={!setting?.active}
+                    onChange={(e) =>
+                      updateGroupSetting(group.id, {
+                        publishStartTime: e.target.value || null,
+                      })
+                    }
+                  />
+                  <TextField
+                    label="Deadline pre skupinu"
+                    type="datetime-local"
+                    size="small"
+                    InputLabelProps={{ shrink: true }}
+                    value={setting?.uploadEndTime ?? ""}
+                    disabled={!setting?.active}
+                    onChange={(e) =>
+                      updateGroupSetting(group.id, {
+                        uploadEndTime: e.target.value || null,
+                      })
+                    }
+                  />
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
+      )}
+
       <TextField
         label="Počet bodov (voliteľné)"
         type="number"
@@ -237,6 +353,7 @@ const AssignmentFormInfo = ({ onCreated, defaultValues, onUpdated }: Props) => {
         <Editor
           value={instructions}
           onEditorChange={(content) => setInstructions(content)}
+          licenseKey="gpl"
           init={{
             height: 400,
             menubar: false,
@@ -250,11 +367,10 @@ const AssignmentFormInfo = ({ onCreated, defaultValues, onUpdated }: Props) => {
               "body { font-family:Roboto,Arial,sans-serif; font-size:14px }",
             skin_url: "/tinymce/skins/ui/oxide",
             content_css: "/tinymce/skins/content/default/content.css",
-            license_key: "gpl",
             model: "dom",
 
             file_picker_types: "image",
-            file_picker_callback: (callback, value, meta) => {
+            file_picker_callback: (callback, _value, meta) => {
               if (meta.filetype === "image") {
                 const input = document.createElement("input");
                 input.setAttribute("type", "file");

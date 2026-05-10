@@ -23,6 +23,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import AssignmentIcon  from "@mui/icons-material/Assignment";
 import api from "../../../services/api";
 import GroupIcon from '@mui/icons-material/Group';
+import GroupsIcon from '@mui/icons-material/Groups';
 import CopyAllIcon from '@mui/icons-material/CopyAll';
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import { Course } from "../Types/Course";
@@ -443,6 +444,20 @@ const Courses = () => {
                           >
                           <EditNoteIcon/>
                         </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Skupiny" placement="top">
+                          <IconButton
+                              onClick={() =>
+                                  navigate(`/dash/courses/${course.id}/groups`, {
+                                    state: {
+                                      courseName: course.name,
+                                      periodName: course.periodName,
+                                    },
+                                  })
+                              }
+                          >
+                            <GroupsIcon />
+                          </IconButton>
                         </Tooltip>
                         <Tooltip title="Študenti" placement="top">
                           <IconButton

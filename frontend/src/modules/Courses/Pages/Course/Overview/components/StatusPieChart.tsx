@@ -1,4 +1,4 @@
-import { Card, CardContent, Typography, Box, CircularProgress,Paper, Stack, Chip } from '@mui/material';
+import { Card, CardContent, Typography, Box, CircularProgress,Paper, Stack } from '@mui/material';
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer } from 'recharts';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -35,11 +35,11 @@ export default function StatusPieChart() {
             setLoading(true);
             try {
                 const [assignmentsRes, pointsRes] = await Promise.all([
-                    api.get(`/assignments/filter?courseId=${id}`),
+                    api.get(`/assignments/course/${id}`),
                     api.get(`/solutions/courses/${id}/student-points`)
                 ]);
 
-                setAssignments(assignmentsRes.data.items);
+                setAssignments(assignmentsRes.data);
                 const map: Record<number, number> = {};
                 pointsRes.data.forEach((p: { assignmentId: number; points: number }) => {
                     map[p.assignmentId] = p.points;

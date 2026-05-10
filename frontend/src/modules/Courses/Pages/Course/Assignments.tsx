@@ -20,7 +20,9 @@ import api from "../../../../services/api";
 import { useNotification } from "../../../../shared/components/NotificationContext.tsx";
 import { useNavigate, useParams } from "react-router-dom";
 
-const statusLabels: Record<string, string> = {
+type AssignmentStatus = 'graded' | 'submitted' | 'open' | 'missing';
+
+const statusLabels: Record<AssignmentStatus, string> = {
     graded: 'Ohodnotené',
     submitted: 'Odovzdané',
     open: 'Otvorené',
@@ -33,11 +35,12 @@ const getStatusChip = (status: string) => {
         open: 'secondary',
         missing: 'error',
     } as const;
+    const color = status in colorMap ? colorMap[status as AssignmentStatus] : 'default';
 
     return (
         <Chip
-            label={statusLabels[status] || status}
-            color={colorMap[status] || 'default'}
+            label={status in statusLabels ? statusLabels[status as AssignmentStatus] : status}
+            color={color}
             size="small"
         />
     );
@@ -89,13 +92,13 @@ export default function Assignments() {
     useEffect(() => {
         const fetchAssignments = async () => {
             try {
-                const response = await api.get(`/assignments/filter?courseId=${id}`);
-                setAssignments(response.data.items);
+                const response = await api.get(`/assignments/course/${id}`);
+                setAssignments(response.data);
 
                 // Inicializujeme viditeľnosť pre každý typ úloh (všetko na true)
                 const typesMap: Record<string, boolean> = {};
-                response.data.items.forEach((a: any) => {
-                    typesMap[a.taskSetType.identifier] = true;
+                response.data.forEach((a: any) => {
+                    typesMap[a.taskSetTypeIdentifier] = true;
                 });
                 setVisibleTypes(typesMap);
             } catch (error) {
@@ -136,7 +139,7 @@ export default function Assignments() {
 
     const assignmentTypes = Array.from(
         new Map(
-            assignments.map((a) => [a.taskSetType.identifier, a.taskSetType.name])
+            assignments.map((a) => [a.taskSetTypeIdentifier, a.taskSetTypeName])
         ).entries()
     ).map(([typeId, label]) => ({ id: typeId, label }));
 
@@ -191,7 +194,7 @@ export default function Assignments() {
 
             {assignmentTypes.map((type) => {
                 const assignmentsOfType = filteredAssignments.filter(
-                    (a) => a.taskSetType.identifier === type.id
+                    (a) => a.taskSetTypeIdentifier === type.id
                 );
 
                 if (assignmentsOfType.length === 0) return null;
