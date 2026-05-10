@@ -424,6 +424,7 @@ public class EvaluationService : IEvaluationService
         var participants = await _coursesDb.Participants
             .Where(p => p.CourseId == assignment.CourseId && p.Allowed)
             .Include(p => p.User)
+            .Include(p => p.Group)
             .ToListAsync();
 
         // 3) Načítaj existujúce solutions
@@ -527,7 +528,7 @@ public class EvaluationService : IEvaluationService
                 Updated = s.Updated,
                 FullName = s.Student.Fullname,
                 Email = s.Student.Email,
-                Group = "-",
+                Group = p?.Group?.Name ?? "-",
                 VersionsCount = s.Versions.Count,
                 LastIpAddress = lastVersion?.IpAddress,
                 Points = s.Points

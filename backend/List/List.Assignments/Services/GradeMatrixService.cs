@@ -64,6 +64,7 @@ public class GradeMatrixService : IGradeMatrixService
         var participants = await _coursesDb.Participants
             .Where(p => p.CourseId == courseId && p.Allowed)
             .Include(p => p.User)
+            .Include(p => p.Group)
             .AsNoTracking()
             .ToListAsync();
 
@@ -139,7 +140,7 @@ public class GradeMatrixService : IGradeMatrixService
             {
                 StudentId = p.UserId,
                 FullName = p.User.Fullname,
-                Group = null,
+                Group = p.Group?.Name,
             };
 
             // 1) Vyplníme body po jednotlivých assignments

@@ -32,4 +32,10 @@ public class Participant
     [Required]
     [Column("allowed")]
     public bool Allowed { get; set; } = false;
+
+    [Column("group_id")]
+    public int? GroupId { get; set; }
+
+    [ForeignKey("GroupId")]
+    public CourseGroup? Group { get; set; }
 }

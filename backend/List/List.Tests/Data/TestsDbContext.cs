@@ -37,7 +37,16 @@ public class TestsDbContext(DbContextOptions<TestsDbContext> options) : DbContex
         modelBuilder.Entity<Participant>(entity =>
         {
             entity.ToTable("participants", t => t.ExcludeFromMigrations());
+            entity.Ignore(e => e.Group);
         });
+
+        modelBuilder.Entity<Course>(entity =>
+        {
+            entity.Ignore(e => e.Groups);
+        });
+
+        modelBuilder.Ignore<CourseGroup>();
+        modelBuilder.Ignore<GroupRoom>();
 
         modelBuilder.Entity<User>(entity =>
         {

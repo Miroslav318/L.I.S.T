@@ -8,6 +8,7 @@ using System.Security.Claims;
 using List.Common.Files;
 using List.Logs.Services;
 using Microsoft.AspNetCore.Http;
+using List.Users.Models;
 
 namespace List.Courses.Controllers
 {
@@ -31,7 +32,8 @@ namespace List.Courses.Controllers
                 .Where(p => p.UserId == userId)
                 .Select(p => new {
                     CourseId = p.CourseId,
-                    Allowed = p.Allowed
+                    Allowed = p.Allowed,
+                    GroupId = p.GroupId
                 })
                 .ToListAsync();
 
@@ -79,6 +81,82 @@ namespace List.Courses.Controllers
                 allowed = participant.Allowed
             });
         }
+
+        [HttpPost("manual")]
+        [Authorize(Roles = "Teacher")]
+        public async Task<IActionResult> AddParticipantManually([FromBody] ParticipantManualCreateDto dto)
+        {
+            var email = dto.Email.Trim().ToLower();
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest("Email studenta nemoze byt prazdny.");
+
+            var course = await _context.Courses
+                .Include(c => c.Participants)
+                .FirstOrDefaultAsync(c => c.Id == dto.CourseId);
+
+            if (course == null)
+                return NotFound("Kurz neexistuje.");
+
+            var user = await _context.Set<User>()
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == email);
+
+            if (user == null)
+                return NotFound("Pouzivatel s tymto emailom neexistuje.");
+
+            var alreadyParticipant = await _context.Participants
+                .AnyAsync(p => p.CourseId == dto.CourseId && p.UserId == user.Id);
+
+            if (alreadyParticipant)
+                return BadRequest("Student uz je v tomto kurze.");
+
+            if (dto.Allowed)
+            {
+                var enrolledCount = course.Participants.Count(p => p.Allowed);
+                if (enrolledCount >= course.Capacity)
+                    return BadRequest("Kurz je plny.");
+            }
+
+            CourseGroup? group = null;
+            if (dto.GroupId.HasValue)
+            {
+                group = await _context.Groups
+                    .Include(g => g.Rooms)
+                    .Include(g => g.Participants)
+                    .FirstOrDefaultAsync(g => g.Id == dto.GroupId.Value);
+
+                if (group == null || group.CourseId != dto.CourseId)
+                    return BadRequest("Skupina nepatri do tohto kurzu.");
+
+                var groupCapacity = group.Rooms.Sum(r => r.Capacity);
+                if (dto.Allowed && groupCapacity > 0)
+                {
+                    var groupCount = group.Participants.Count(p => p.Allowed);
+                    if (groupCount >= groupCapacity)
+                        return BadRequest("Skupina je plna.");
+                }
+            }
+
+            var participant = new Participant
+            {
+                CourseId = dto.CourseId,
+                UserId = user.Id,
+                Allowed = dto.Allowed,
+                GroupId = group?.Id
+            };
+
+            _context.Participants.Add(participant);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                userId = user.Id,
+                userName = user.Fullname,
+                email = user.Email,
+                allowed = participant.Allowed,
+                groupId = participant.GroupId,
+                groupName = group?.Name
+            });
+        }
         [HttpGet("course/{courseId}")]
         public async Task<IActionResult> GetParticipantsByCourse(int courseId)
         {
@@ -89,12 +167,15 @@ namespace List.Courses.Controllers
             var participants = await _context.Participants
                 .Where(p => p.CourseId == courseId)
                 .Include(p => p.User)
+                .Include(p => p.Group)
                 .Select(p => new
                 {
                     UserId = p.UserId,
                     UserName = p.User.Fullname,
                     Email = p.User.Email,
-                    Allowed = p.Allowed
+                    Allowed = p.Allowed,
+                    GroupId = p.GroupId,
+                    GroupName = p.Group != null ? p.Group.Name : null
                 })
                 .ToListAsync();
 
@@ -111,16 +192,79 @@ namespace List.Courses.Controllers
             if (participant == null)
                 return NotFound("Účastník neexistuje.");
 
-            var enrolledCount = await _context.Participants
-                .CountAsync(p => p.CourseId == dto.CourseId && p.Allowed);
+            if (!participant.Allowed)
+            {
+                var enrolledCount = await _context.Participants
+                    .CountAsync(p => p.CourseId == dto.CourseId && p.Allowed);
 
-            if (enrolledCount >= participant.Course.Capacity)
-                return BadRequest("Kapacita kurzu je plná. Nemôžeš schváliť ďalšieho účastníka.");
+                if (enrolledCount >= participant.Course.Capacity)
+                    return BadRequest("Kapacita kurzu je plna. Nemozes schvalit dalsieho ucastnika.");
+
+                if (participant.GroupId.HasValue)
+                {
+                    var groupCapacity = await _context.Rooms
+                        .Where(r => r.GroupId == participant.GroupId.Value)
+                        .SumAsync(r => r.Capacity);
+
+                    if (groupCapacity > 0)
+                    {
+                        var groupCount = await _context.Participants
+                            .CountAsync(p => p.GroupId == participant.GroupId.Value && p.Allowed);
+
+                        if (groupCount >= groupCapacity)
+                            return BadRequest("Skupina ucastnika je plna.");
+                    }
+                }
+            }
 
             participant.Allowed = true;
             await _context.SaveChangesAsync();
 
             return Ok();
+        }
+
+        [HttpPatch("group")]
+        [Authorize(Roles = "Teacher")]
+        public async Task<IActionResult> AssignGroup([FromBody] ParticipantGroupUpdateDto dto)
+        {
+            var participant = await _context.Participants
+                .Include(p => p.Group)
+                .FirstOrDefaultAsync(p => p.CourseId == dto.CourseId && p.UserId == dto.UserId);
+
+            if (participant == null)
+                return NotFound("Účastník neexistuje.");
+
+            if (!dto.GroupId.HasValue)
+            {
+                participant.GroupId = null;
+                await _context.SaveChangesAsync();
+                return Ok(new { groupId = participant.GroupId, groupName = (string?)null });
+            }
+
+            var group = await _context.Groups
+                .Include(g => g.Rooms)
+                .FirstOrDefaultAsync(g => g.Id == dto.GroupId.Value);
+
+            if (group == null || group.CourseId != dto.CourseId)
+                return BadRequest("Skupina nepatri do tohto kurzu.");
+
+            if (participant.Allowed)
+            {
+                var groupCapacity = group.Rooms.Sum(r => r.Capacity);
+                if (groupCapacity > 0)
+                {
+                    var groupCount = await _context.Participants
+                        .CountAsync(p => p.GroupId == group.Id && p.Allowed && p.UserId != participant.UserId);
+
+                    if (groupCount >= groupCapacity)
+                        return BadRequest("Skupina je plna.");
+                }
+            }
+
+            participant.GroupId = group.Id;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { groupId = group.Id, groupName = group.Name });
         }
 
 

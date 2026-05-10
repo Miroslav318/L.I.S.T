@@ -11,6 +11,7 @@ public class AssignmentsDbContext(DbContextOptions<AssignmentsDbContext> options
 {
     public DbSet<AssignmentModel> Assignments { get; set; }
     public DbSet<AssignmentTaskRelModel> AssignmentTaskRels { get; set; }
+    public DbSet<AssignmentGroupSetting> AssignmentGroupSettings { get; set; }
     public DbSet<SolutionModel> Solutions { get; set; }
     public DbSet<SolutionVersionModel> SolutionVersions { get; set; }
 
@@ -42,12 +43,17 @@ public class AssignmentsDbContext(DbContextOptions<AssignmentsDbContext> options
         modelBuilder.Entity<Course>(entity =>
         {
             entity.ToTable("Courses", t => t.ExcludeFromMigrations());
+            entity.Ignore(e => e.Groups);
         });
 
         modelBuilder.Entity<Participant>(entity =>
         {
             entity.ToTable("participants", t => t.ExcludeFromMigrations());
+            entity.Ignore(e => e.Group);
         });
+
+        modelBuilder.Ignore<CourseGroup>();
+        modelBuilder.Ignore<GroupRoom>();
 
         modelBuilder.Entity<User>(entity =>
         {
@@ -109,6 +115,24 @@ public class AssignmentsDbContext(DbContextOptions<AssignmentsDbContext> options
             .HasForeignKey(a => new { a.CourseId, a.TaskSetTypeId })
             .HasPrincipalKey(c => new { c.CourseId, c.TaskSetTypeId })
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AssignmentGroupSetting>(entity =>
+        {
+            entity.ToTable("assignment_group_settings");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.AssignmentId).HasColumnName("assignment_id").IsRequired();
+            entity.Property(e => e.GroupId).HasColumnName("group_id").IsRequired();
+            entity.Property(e => e.PublishStartTime).HasColumnName("publish_start_time");
+            entity.Property(e => e.UploadEndTime).HasColumnName("upload_end_time");
+            entity.Property(e => e.Active).HasColumnName("active").IsRequired();
+
+            entity.HasOne(e => e.Assignment)
+                .WithMany(a => a.GroupSettings)
+                .HasForeignKey(e => e.AssignmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.AssignmentId, e.GroupId }).IsUnique();
+        });
 
         modelBuilder.Entity<SolutionModel>()
             .HasOne(s => s.Assignment)

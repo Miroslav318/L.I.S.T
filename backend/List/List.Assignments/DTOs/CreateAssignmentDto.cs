@@ -12,4 +12,5 @@ public class CreateAssignmentDto
     public string? Instructions { get; set; }
     public double? PointsOverride { get; set; }
     public string? InternalComment { get; set; }
+    public List<AssignmentGroupSettingDto> GroupSettings { get; set; } = new();
 }
