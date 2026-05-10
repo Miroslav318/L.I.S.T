@@ -12,6 +12,7 @@ export type Course = {
 
     isMine?: boolean;
     allowed?: boolean;
+    onJoined?: (courseId: number) => void;
     currentEnrollment: number;
     description?: string;
   };

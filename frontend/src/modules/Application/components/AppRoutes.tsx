@@ -32,6 +32,8 @@ import GradeTable from "../../Grading/pages/GradeTable.tsx";
 import CourseDescriptionEditor from "../../Courses/Pages/CourseDescriptionEditor.tsx";
 import AssignmentTasksViewer from "../../Assignments/pages/AssignmentTasksViewer.tsx";
 import Tests from "../../Tests/Pages/Tests.tsx";
+import CourseGroups from "../../Courses/Pages/CourseGroups.tsx";
+import Groups from "../../Courses/Pages/Course/Groups.tsx";
 
 const AppRoutes = () => {
   return (
@@ -47,6 +49,7 @@ const AppRoutes = () => {
                 <Route path="assignments/:assignmentId/tasks" element={<AssignmentTasksViewer />} />
                 <Route path="overview" element={<Overview />} />
                 <Route path="projects" element={<Projects />} />
+                <Route path="groups" element={<Groups />} />
         </Route>
       </Route>
       <Route
@@ -61,6 +64,7 @@ const AppRoutes = () => {
         <Route index element={<Navigate to="courses" replace />} />
         <Route path="courses" element={<Courses />} />
         <Route path="courses/:id/tasksets" element={<TaskSets />} />
+        <Route path="courses/:id/groups" element={<CourseGroups />} />
         <Route path="courses/:id/participants" element={<Participants />} />
           <Route path="courses/:id/participants" element={<Participants />} />
           <Route path="courses/:id/description" element={<CourseDescriptionEditor />} />

@@ -19,10 +19,10 @@ export default function UpcomingDeadlines() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await api.get(`/assignments/filter?courseId=${id}`);
+                const res = await api.get(`/assignments/course/${id}`);
                 const now = new Date();
 
-                const upcoming = res.data.items
+                const upcoming = res.data
                     .filter((a: any) => a.uploadEndTime && new Date(a.uploadEndTime) > now && a.published)
                     .sort((a: any, b: any) => new Date(a.uploadEndTime).getTime() - new Date(b.uploadEndTime).getTime())
                     .slice(0, 7);
@@ -42,8 +42,6 @@ export default function UpcomingDeadlines() {
         const diff = (new Date(end).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
         return `o ${Math.ceil(diff)} dní`;
     };
-
-    const visibleDeadlines = deadlines;
 
     return (
         <Card     sx={{
@@ -74,7 +72,7 @@ export default function UpcomingDeadlines() {
                     </Typography>
                 ) : (
                     deadlines.map((item, index) => {
-                        const typeId = item.taskSetType.identifier;
+                        const typeId = item.taskSetTypeIdentifier;
                         const color = getTypeColor(typeId);
 
                         return (

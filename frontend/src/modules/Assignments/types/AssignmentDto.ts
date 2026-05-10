@@ -8,4 +8,13 @@ export type AssignmentDto = {
   pointsOverride: number | null;
   instructions: string | null;
   internalComment: string | null;
+  groupSettings: AssignmentGroupSettingDto[];
+};
+
+export type AssignmentGroupSettingDto = {
+  id?: number | null;
+  groupId: number;
+  publishStartTime: string | null;
+  uploadEndTime: string | null;
+  active: boolean;
 };

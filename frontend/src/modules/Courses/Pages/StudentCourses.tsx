@@ -18,6 +18,11 @@ import EmptyState from "../../../shared/components/EmptyState.tsx";
 import api from "../../../services/api.ts";
 import { useNotification } from "../../../shared/components/NotificationContext.tsx";
 
+type MyCourseInfo = {
+    courseId: number;
+    allowed: boolean;
+    groupId?: number | null;
+};
 
 export default function StudentCourses() {
     const [selectedPeriod, setSelectedPeriod] = useState('');
@@ -49,7 +54,7 @@ export default function StudentCourses() {
             try {
                 const [coursesRes, myCourseIdsRes] = await Promise.all([
                     api.get<Course[]>('/courses/student-visible'),
-                    api.get<number[]>('/participants/mine')
+                    api.get<MyCourseInfo[]>('/participants/mine')
                 ]);
 
                 const myCourseInfos = myCourseIdsRes.data;
