@@ -3,5 +3,6 @@ export type AssignmentTaskRel = {
   taskId: number,
   pointsTotal: number,
   bonusTask: boolean,
+  projectSelectionLimit?: number | null,
   internalComment: string,
 };

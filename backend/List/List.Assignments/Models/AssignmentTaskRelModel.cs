@@ -28,6 +28,9 @@ public class AssignmentTaskRelModel
     [Column("bonus")]
     public bool BonusTask { get; set; }
 
+    [Column("project_selection_limit")]
+    public int? ProjectSelectionLimit { get; set; }
+
     [Column("internal_comment")]
     public string? InternalComment { get; set; }
 }

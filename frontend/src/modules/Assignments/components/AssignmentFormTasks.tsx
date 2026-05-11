@@ -30,9 +30,10 @@ import EmptyState from "../../../shared/components/EmptyState.tsx";
 
 type Props = {
   assignmentId: number;
+  isProject?: boolean;
 };
 
-const AssignmentFormTasks: FC<Props> = ({ assignmentId }) => {
+const AssignmentFormTasks: FC<Props> = ({ assignmentId, isProject = false }) => {
   const { showNotification } = useNotification();
   const [rows, setRows] = useState<AssignmentTaskRelSlim[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,6 +72,7 @@ const AssignmentFormTasks: FC<Props> = ({ assignmentId }) => {
         taskId: r.taskId,
         pointsTotal: r.pointsTotal,
         bonusTask: r.bonusTask,
+        projectSelectionLimit: isProject ? r.projectSelectionLimit ?? null : null,
         internalComment: r.internalComment,
       });
       showNotification("Zmeny uložené", "success");
@@ -143,6 +145,7 @@ const AssignmentFormTasks: FC<Props> = ({ assignmentId }) => {
           <TableRow>
             <TableCell>Úloha</TableCell>
             <TableCell>Body</TableCell>
+            {isProject && <TableCell>Limit vyberov</TableCell>}
             <TableCell>Bonus</TableCell>
             <TableCell>Interný komentár</TableCell>
             <TableCell align="center">Akcie</TableCell>
@@ -164,6 +167,23 @@ const AssignmentFormTasks: FC<Props> = ({ assignmentId }) => {
                     inputProps={{ min: 0 }}
                   />
                 </TableCell>
+                {isProject && (
+                  <TableCell>
+                    <TextField
+                      type="number"
+                      size="small"
+                      value={r.projectSelectionLimit ?? ""}
+                      onChange={(e) =>
+                        updateRow(idx, {
+                          projectSelectionLimit:
+                            e.target.value === "" ? null : Number(e.target.value),
+                        })
+                      }
+                      inputProps={{ min: 1 }}
+                      sx={{ width: 120 }}
+                    />
+                  </TableCell>
+                )}
                 <TableCell>
                   <Checkbox
                     checked={r.bonusTask}
@@ -199,14 +219,14 @@ const AssignmentFormTasks: FC<Props> = ({ assignmentId }) => {
 
               {/* preview radenie */}
               <TableRow>
-                <TableCell colSpan={5} style={{ padding: 0, border: 0 }}>
+                <TableCell colSpan={isProject ? 6 : 5} style={{ padding: 0, border: 0 }}>
                   <Collapse in={r.previewOpen}>
                     <Box margin={2}>
                       <TaskPreview
                         name={r.task.name}
                         text={r.task.text}
                         comment={r.task.internalComment}
-                        authorName={r.task.authorName}
+                        authorName={r.task.authorName ?? r.task.fullname ?? ""}
                       />
                     </Box>
                   </Collapse>

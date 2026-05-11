@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -18,18 +18,26 @@ type AddTaskDialogProps = {
   onConfirm: (data: {
     pointsTotal: number;
     bonusTask: boolean;
+    projectSelectionLimit?: number | null;
     internalComment: string;
   }) => void;
   data: TaskPreviewData | null;
+  isProject?: boolean;
 };
 
-const AddTaskDialog = ({ open, onClose, onConfirm, data }: AddTaskDialogProps) => {
+const AddTaskDialog = ({ open, onClose, onConfirm, data, isProject = false }: AddTaskDialogProps) => {
   const [pointsTotal, setPointsTotal] = useState(0);
   const [bonusTask, setBonusTask] = useState(false);
+  const [projectSelectionLimit, setProjectSelectionLimit] = useState<number | null>(3);
   const [internalComment, setInternalComment] = useState("");
 
   const handleConfirm = () => {
-    onConfirm({ pointsTotal, bonusTask, internalComment });
+    onConfirm({
+      pointsTotal,
+      bonusTask,
+      projectSelectionLimit: isProject ? projectSelectionLimit : null,
+      internalComment,
+    });
   };
 
   return (
@@ -53,6 +61,20 @@ const AddTaskDialog = ({ open, onClose, onConfirm, data }: AddTaskDialogProps) =
             }
             label="Je to bonusová úloha?"
           />
+          {isProject && (
+            <TextField
+              label="Maximum studentov pre tuto temu"
+              type="number"
+              value={projectSelectionLimit ?? ""}
+              onChange={(e) =>
+                setProjectSelectionLimit(
+                  e.target.value === "" ? null : Number(e.target.value)
+                )
+              }
+              inputProps={{ min: 1 }}
+              fullWidth
+            />
+          )}
           <TextField
             label="Interný komentár"
             value={internalComment}

@@ -101,6 +101,7 @@ public class AssignmentService : IAssignmentService
             Published = assignmentDto.Published,
             PublishStartTime = assignmentDto.PublishStartTime?.ToUniversalTime(),
             UploadEndTime = assignmentDto.UploadEndTime?.ToUniversalTime(),
+            ProjectSelectionDeadline = assignmentDto.ProjectSelectionDeadline?.ToUniversalTime(),
             Instructions = assignmentDto.Instructions,
             PointsOverride = assignmentDto.PointsOverride,
             InternalComment = assignmentDto.InternalComment,
@@ -141,6 +142,7 @@ public class AssignmentService : IAssignmentService
             .ToListAsync();
 
         return assignments
+            .Where(a => !IsProjectAssignment(a))
             .Select(a =>
             {
                 var activeSettings = a.GroupSettings.Where(s => s.Active).ToList();
@@ -188,6 +190,7 @@ public class AssignmentService : IAssignmentService
             Published = original.Published,
             PublishStartTime = original.PublishStartTime,
             UploadEndTime = original.UploadEndTime,
+            ProjectSelectionDeadline = original.ProjectSelectionDeadline,
             Instructions = original.Instructions,
             PointsOverride = original.PointsOverride,
             InternalComment = original.InternalComment,
@@ -223,6 +226,7 @@ public class AssignmentService : IAssignmentService
                 TaskId = r.TaskId,
                 PointsTotal = r.PointsTotal,
                 BonusTask = r.BonusTask,
+                ProjectSelectionLimit = r.ProjectSelectionLimit,
                 InternalComment = r.InternalComment
             });
         }
@@ -244,6 +248,7 @@ public class AssignmentService : IAssignmentService
         existingAssignment.Published = updatedAssignmentDto.Published;
         existingAssignment.PublishStartTime = updatedAssignmentDto.PublishStartTime?.ToUniversalTime();
         existingAssignment.UploadEndTime = updatedAssignmentDto.UploadEndTime?.ToUniversalTime();
+        existingAssignment.ProjectSelectionDeadline = updatedAssignmentDto.ProjectSelectionDeadline?.ToUniversalTime();
         existingAssignment.Instructions = updatedAssignmentDto.Instructions;
         existingAssignment.PointsOverride = updatedAssignmentDto.PointsOverride;
         existingAssignment.InternalComment = updatedAssignmentDto.InternalComment;
@@ -386,5 +391,16 @@ public class AssignmentService : IAssignmentService
             Published = assignment.Published,
             GroupId = groupId
         };
+    }
+
+    private static bool IsProjectAssignment(AssignmentModel assignment)
+    {
+        var identifier = assignment.TaskSetType.Identifier?.ToLowerInvariant() ?? string.Empty;
+        var name = assignment.TaskSetType.Name.ToLowerInvariant();
+
+        return identifier.Contains("project") ||
+            identifier.Contains("projekt") ||
+            name.Contains("project") ||
+            name.Contains("projekt");
     }
 }

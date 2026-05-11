@@ -5,6 +5,7 @@ export type AssignmentDto = {
   published: boolean;
   publishStartTime: string | null;
   uploadEndTime: string | null;
+  projectSelectionDeadline: string | null;
   pointsOverride: number | null;
   instructions: string | null;
   internalComment: string | null;

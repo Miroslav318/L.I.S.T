@@ -17,6 +17,7 @@ export type Assignment = {
   published: boolean;
   publishStartTime: string | null;
   uploadEndTime: string | null;
+  projectSelectionDeadline: string | null;
   instructions: string | null;
   pointsOverride: number | null;
   internalComment: string | null;

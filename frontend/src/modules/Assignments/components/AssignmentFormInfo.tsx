@@ -16,6 +16,7 @@ import type { CourseGroup } from "../../Courses/Types/CourseGroup";
 import { TaskSetType } from "../../TaskSets/Types/TaskSetType";
 import { useNotification } from "../../../shared/components/NotificationContext";
 import { Assignment } from "../types/Assignment";
+import { isProjectTaskSetType } from "../utils/isProjectAssignment";
 import { Editor } from "@tinymce/tinymce-react";
 import "tinymce/tinymce";
 import "tinymce/themes/silver/theme";
@@ -55,6 +56,11 @@ const AssignmentFormInfo = ({ onCreated, defaultValues, onUpdated }: Props) => {
   const [uploadEndTime, setUploadEndTime] = useState<string | null>(
     defaultValues?.uploadEndTime
       ? defaultValues.uploadEndTime.slice(0, 16)
+      : null
+  );
+  const [projectSelectionDeadline, setProjectSelectionDeadline] = useState<string | null>(
+    defaultValues?.projectSelectionDeadline
+      ? defaultValues.projectSelectionDeadline.slice(0, 16)
       : null
   );
   const [pointsOverride, setPointsOverride] = useState<number | null>(
@@ -133,6 +139,10 @@ const AssignmentFormInfo = ({ onCreated, defaultValues, onUpdated }: Props) => {
     );
   };
 
+  const selectedTaskSetType =
+    taskSetTypes.find((type) => type.id === taskSetTypeId) ?? null;
+  const isProject = isProjectTaskSetType(selectedTaskSetType);
+
   const handleSubmit = async () => {
     if (!name || !courseId || !taskSetTypeId) {
       showNotification("Vyplň názov, kurz a typ zostavy", "error");
@@ -175,6 +185,9 @@ const AssignmentFormInfo = ({ onCreated, defaultValues, onUpdated }: Props) => {
         : null,
       uploadEndTime: uploadEndTime
         ? new Date(uploadEndTime).toISOString()
+        : null,
+      projectSelectionDeadline: isProject && projectSelectionDeadline
+        ? new Date(projectSelectionDeadline).toISOString()
         : null,
       pointsOverride,
       instructions: instructions.trim() ? instructions : null,
@@ -275,6 +288,17 @@ const AssignmentFormInfo = ({ onCreated, defaultValues, onUpdated }: Props) => {
         onChange={(e) => setUploadEndTime(e.target.value)}
         fullWidth
       />
+
+      {isProject && (
+        <TextField
+          label="Termin vyberu projektu"
+          type="datetime-local"
+          InputLabelProps={{ shrink: true }}
+          value={projectSelectionDeadline ?? ""}
+          onChange={(e) => setProjectSelectionDeadline(e.target.value || null)}
+          fullWidth
+        />
+      )}
 
       {groups.length > 0 && (
         <Box>

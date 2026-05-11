@@ -27,6 +27,8 @@ import PreviewDialog from "../components/PreviewDialog";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { Collapse } from "@mui/material";
+import { Assignment } from "../types/Assignment";
+import { isProjectAssignment } from "../utils/isProjectAssignment";
 
 const SelectTasksForAssignmentPage = () => {
   const { id: assignmentId } = useParams<{ id: string }>();
@@ -39,6 +41,7 @@ const SelectTasksForAssignmentPage = () => {
     categoryBlocks: [] as CategoryFilterBlock[],
   });
   const [expandedGroups, setExpandedGroups] = useState<number[]>([]);
+  const [assignment, setAssignment] = useState<Assignment | null>(null);
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState<{
@@ -116,6 +119,7 @@ const SelectTasksForAssignmentPage = () => {
   const handleConfirmAdd = async (data: {
   pointsTotal: number;
   bonusTask: boolean;
+  projectSelectionLimit?: number | null;
   internalComment: string;
 }) => {
   if (!assignmentId || addTaskId == null) return;
@@ -125,6 +129,9 @@ const SelectTasksForAssignmentPage = () => {
       taskId: addTaskId,
       pointsTotal: data.pointsTotal,
       bonusTask: data.bonusTask,
+      projectSelectionLimit: isProjectAssignment(assignment)
+        ? data.projectSelectionLimit ?? null
+        : null,
       internalComment: data.internalComment,
     });
     showNotification("Úloha pridaná do zostavy", "success");
@@ -173,6 +180,14 @@ const SelectTasksForAssignmentPage = () => {
   useEffect(() => {
     fetchTasks();
   }, [filters]);
+
+  useEffect(() => {
+    if (!assignmentId) return;
+    api
+      .get<Assignment>(`/assignments/${assignmentId}`)
+      .then((res) => setAssignment(res.data))
+      .catch(() => setAssignment(null));
+  }, [assignmentId]);
 
   const groupedTasks = tasks.reduce((acc, task) => {
     const rootId = task.parentTaskId ?? task.id;
@@ -285,6 +300,7 @@ const SelectTasksForAssignmentPage = () => {
         onClose={handleCloseAdd}
         onConfirm={handleConfirmAdd}
         data={previewData}
+        isProject={isProjectAssignment(assignment)}
       />
 
       {/* preview dialog */}

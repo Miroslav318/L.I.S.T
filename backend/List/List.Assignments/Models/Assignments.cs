@@ -54,6 +54,9 @@ public class AssignmentModel
     [Column("upload_end_time")]
     public DateTime? UploadEndTime { get; set; }
 
+    [Column("project_selection_deadline")]
+    public DateTime? ProjectSelectionDeadline { get; set; }
+
     [Column("instructions")]
     public string? Instructions { get; set; }
 
@@ -70,4 +73,7 @@ public class AssignmentModel
 
     [InverseProperty(nameof(AssignmentGroupSetting.Assignment))]
     public ICollection<AssignmentGroupSetting> GroupSettings { get; set; } = new List<AssignmentGroupSetting>();
+
+    [InverseProperty(nameof(ProjectSelection.Assignment))]
+    public ICollection<ProjectSelection> ProjectSelections { get; set; } = new List<ProjectSelection>();
 }

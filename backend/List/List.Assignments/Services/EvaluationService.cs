@@ -40,6 +40,22 @@ public class EvaluationService : IEvaluationService
     )
     {
         // 1) Najprv nájdeme alebo vytvoríme SolutionModel
+        var assignmentForUpload = await _db.Assignments
+            .AsNoTracking()
+            .Include(a => a.TaskSetType)
+            .FirstOrDefaultAsync(a => a.Id == assignmentId)
+            ?? throw new KeyNotFoundException("Assignment nenajdene");
+
+        if (IsProjectAssignment(assignmentForUpload))
+        {
+            var hasProjectSelection = await _db.ProjectSelections
+                .AsNoTracking()
+                .AnyAsync(s => s.AssignmentId == assignmentId && s.StudentId == studentId);
+
+            if (!hasProjectSelection)
+                throw new InvalidOperationException("Najprv si vyber projektovu temu.");
+        }
+
         var solution = await _db.Solutions
             .Include(s => s.Versions)
             .Include(s => s.Assignment)
@@ -50,16 +66,11 @@ public class EvaluationService : IEvaluationService
 
         if (solution == null)
         {
-            var assignment = await _db.Assignments
-               .AsNoTracking()
-               .FirstOrDefaultAsync(a => a.Id == assignmentId)
-               ?? throw new KeyNotFoundException("Assignment nenájdené");
-
             solution = new SolutionModel
             {
                 AssignmentId = assignmentId,
                 StudentId = studentId,
-                TeacherId = assignment.TeacherId,          // prípadne nastaviteľné z kontextu
+                TeacherId = assignmentForUpload.TeacherId,          // prípadne nastaviteľné z kontextu
                 Created = DateTime.UtcNow,
                 Updated = DateTime.UtcNow,
                 TestsPoints = 0,
@@ -656,5 +667,15 @@ public class EvaluationService : IEvaluationService
         return list;
     }
 
+    private static bool IsProjectAssignment(AssignmentModel assignment)
+    {
+        var identifier = assignment.TaskSetType.Identifier?.ToLowerInvariant() ?? string.Empty;
+        var name = assignment.TaskSetType.Name.ToLowerInvariant();
+
+        return identifier.Contains("project") ||
+            identifier.Contains("projekt") ||
+            name.Contains("project") ||
+            name.Contains("projekt");
+    }
 
 }

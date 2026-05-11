@@ -40,14 +40,25 @@ public class EvaluationController : ControllerBase
         var studentId = int.Parse(claim.Value);
         var remoteIp = HttpContext.GetClientIpAddress();
 
-
-        var version = await _svc.AddVersionAsync(
-            assignmentId,
-            studentId,
-            file,
-            remoteIp,
-            comment
-        );
+        SolutionVersionDto version;
+        try
+        {
+            version = await _svc.AddVersionAsync(
+                assignmentId,
+                studentId,
+                file,
+                remoteIp,
+                comment
+            );
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
         var userName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "neznámy";
         await _log.LogAsync(
     userName,

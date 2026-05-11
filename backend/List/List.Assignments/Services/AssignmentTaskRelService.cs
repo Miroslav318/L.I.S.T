@@ -25,6 +25,7 @@ public class AssignmentTaskRelService : IAssignmentTaskRelService
             TaskId = dto.TaskId,
             PointsTotal = dto.PointsTotal,
             BonusTask = dto.BonusTask,
+            ProjectSelectionLimit = NormalizeProjectSelectionLimit(dto.ProjectSelectionLimit),
             InternalComment = dto.InternalComment
         };
 
@@ -47,6 +48,7 @@ public class AssignmentTaskRelService : IAssignmentTaskRelService
 
             rel.PointsTotal = dto.PointsTotal;
             rel.BonusTask = dto.BonusTask;
+            rel.ProjectSelectionLimit = NormalizeProjectSelectionLimit(dto.ProjectSelectionLimit);
             rel.InternalComment = dto.InternalComment;
 
             await _dbContext.SaveChangesAsync();
@@ -86,6 +88,7 @@ public class AssignmentTaskRelService : IAssignmentTaskRelService
                 AssignmentId = r.AssignmentId,
                 PointsTotal = r.PointsTotal,
                 BonusTask = r.BonusTask,
+                ProjectSelectionLimit = r.ProjectSelectionLimit,
                 InternalComment = r.InternalComment,
                 Task = new TaskDto
                 {
@@ -108,9 +111,10 @@ public class AssignmentTaskRelService : IAssignmentTaskRelService
         {
             TaskId = r.TaskId,
             AssignmentId = r.AssignmentId,
-            PointsTotal = r.PointsTotal,
-            BonusTask = r.BonusTask,
-            InternalComment = r.InternalComment,
+           PointsTotal = r.PointsTotal,
+           BonusTask = r.BonusTask,
+           ProjectSelectionLimit = r.ProjectSelectionLimit,
+           InternalComment = r.InternalComment,
             Task = new AssignmentTaskRelSlimDto.TaskSlim
             {
                 Id = r.Task.Id,
@@ -130,5 +134,10 @@ public class AssignmentTaskRelService : IAssignmentTaskRelService
             .Include(r => r.Task)
             .Include(r => r.Assignment)
             .ToListAsync();
+    }
+
+    private static int? NormalizeProjectSelectionLimit(int? value)
+    {
+        return value.HasValue && value.Value > 0 ? value.Value : null;
     }
 }

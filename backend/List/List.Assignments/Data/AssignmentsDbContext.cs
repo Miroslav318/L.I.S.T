@@ -12,6 +12,7 @@ public class AssignmentsDbContext(DbContextOptions<AssignmentsDbContext> options
     public DbSet<AssignmentModel> Assignments { get; set; }
     public DbSet<AssignmentTaskRelModel> AssignmentTaskRels { get; set; }
     public DbSet<AssignmentGroupSetting> AssignmentGroupSettings { get; set; }
+    public DbSet<ProjectSelection> ProjectSelections { get; set; }
     public DbSet<SolutionModel> Solutions { get; set; }
     public DbSet<SolutionVersionModel> SolutionVersions { get; set; }
 
@@ -89,6 +90,10 @@ public class AssignmentsDbContext(DbContextOptions<AssignmentsDbContext> options
         modelBuilder.Entity<AssignmentTaskRelModel>()
             .HasKey(r => new { r.TaskId, r.AssignmentId });
 
+        modelBuilder.Entity<AssignmentTaskRelModel>()
+            .Property(r => r.ProjectSelectionLimit)
+            .HasColumnName("project_selection_limit");
+
         // Relacia Assignment ↔ TaskSetType
         modelBuilder.Entity<AssignmentModel>()
             .HasOne(a => a.TaskSetType)
@@ -116,6 +121,10 @@ public class AssignmentsDbContext(DbContextOptions<AssignmentsDbContext> options
             .HasPrincipalKey(c => new { c.CourseId, c.TaskSetTypeId })
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<AssignmentModel>()
+            .Property(a => a.ProjectSelectionDeadline)
+            .HasColumnName("project_selection_deadline");
+
         modelBuilder.Entity<AssignmentGroupSetting>(entity =>
         {
             entity.ToTable("assignment_group_settings");
@@ -132,6 +141,35 @@ public class AssignmentsDbContext(DbContextOptions<AssignmentsDbContext> options
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(e => new { e.AssignmentId, e.GroupId }).IsUnique();
+        });
+
+        modelBuilder.Entity<ProjectSelection>(entity =>
+        {
+            entity.ToTable("project_selections");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.AssignmentId).HasColumnName("assignment_id").IsRequired();
+            entity.Property(e => e.TaskId).HasColumnName("task_id").IsRequired();
+            entity.Property(e => e.StudentId).HasColumnName("student_id").IsRequired();
+            entity.Property(e => e.Created).HasColumnName("created").IsRequired();
+            entity.Property(e => e.Updated).HasColumnName("updated").IsRequired();
+
+            entity.HasOne(e => e.Assignment)
+                .WithMany(a => a.ProjectSelections)
+                .HasForeignKey(e => e.AssignmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Task)
+                .WithMany()
+                .HasForeignKey(e => e.TaskId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Student)
+                .WithMany()
+                .HasForeignKey(e => e.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.AssignmentId, e.StudentId }).IsUnique();
+            entity.HasIndex(e => new { e.AssignmentId, e.TaskId });
         });
 
         modelBuilder.Entity<SolutionModel>()

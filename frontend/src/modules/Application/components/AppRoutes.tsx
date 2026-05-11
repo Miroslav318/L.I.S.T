@@ -14,6 +14,7 @@ import CourseDescription from "../../Courses/Pages/Course/CourseDescription.tsx"
 import Assignments from "../../Courses/Pages/Course/Assignments";
 import Overview from "../../Courses/Pages/Course/Overview/Overview.tsx";
 import Projects from "../../Courses/Pages/Course/Projects";
+import ProjectDetail from "../../Courses/Pages/Course/ProjectDetail.tsx";
 import RootRedirect from "./RootRedirect";
 import Tasks from "../../Tasks/Pages/Tasks.tsx";
 import TaskEditor from "../../Tasks/Pages/TaskEditor.tsx";
@@ -49,6 +50,7 @@ const AppRoutes = () => {
                 <Route path="assignments/:assignmentId/tasks" element={<AssignmentTasksViewer />} />
                 <Route path="overview" element={<Overview />} />
                 <Route path="projects" element={<Projects />} />
+                <Route path="projects/:assignmentId" element={<ProjectDetail />} />
                 <Route path="groups" element={<Groups />} />
         </Route>
       </Route>

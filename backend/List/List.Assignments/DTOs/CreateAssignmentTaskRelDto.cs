@@ -6,5 +6,6 @@ public class CreateAssignmentTaskRelDto
     public int TaskId { get; set; }
     public double PointsTotal { get; set; }
     public bool BonusTask { get; set; }
+    public int? ProjectSelectionLimit { get; set; }
     public string? InternalComment { get; set; }
 }

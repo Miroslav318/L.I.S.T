@@ -5,8 +5,9 @@ export interface TaskSlim {
   name: string;
   text: string;
   internalComment: string;
-  authorId: number;
-  fullname: string;
+  authorId?: number;
+  fullname?: string;
+  authorName?: string;
 }
 
 export interface AssignmentTaskRelSlim {
@@ -15,6 +16,7 @@ export interface AssignmentTaskRelSlim {
   assignmentId: number;
   pointsTotal: number;
   bonusTask: boolean;
+  projectSelectionLimit?: number | null;
   internalComment: string;
 
   // UI-flagy, nie od servera

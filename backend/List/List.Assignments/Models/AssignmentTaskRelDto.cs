@@ -12,6 +12,7 @@ public class AssignmentTaskRelDto
 	public int AssignmentId { get; set; }
 	public double PointsTotal { get; set; }
 	public bool BonusTask { get; set; }
+	public int? ProjectSelectionLimit { get; set; }
 	public string? InternalComment { get; set; }
 
 	public TaskDto Task { get; set; } = null!;

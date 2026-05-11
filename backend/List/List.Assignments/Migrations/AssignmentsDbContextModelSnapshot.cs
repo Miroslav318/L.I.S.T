@@ -22,6 +22,43 @@ namespace List.Assignments.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("List.Assignments.Models.AssignmentGroupSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean")
+                        .HasColumnName("active");
+
+                    b.Property<int>("AssignmentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("assignment_id");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("integer")
+                        .HasColumnName("group_id");
+
+                    b.Property<DateTime?>("PublishStartTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("publish_start_time");
+
+                    b.Property<DateTime?>("UploadEndTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("upload_end_time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignmentId", "GroupId")
+                        .IsUnique();
+
+                    b.ToTable("assignment_group_settings", (string)null);
+                });
+
             modelBuilder.Entity("List.Assignments.Models.AssignmentModel", b =>
                 {
                     b.Property<int>("Id")
@@ -54,6 +91,10 @@ namespace List.Assignments.Migrations
                     b.Property<double?>("PointsOverride")
                         .HasColumnType("double precision")
                         .HasColumnName("points_override");
+
+                    b.Property<DateTime?>("ProjectSelectionDeadline")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("project_selection_deadline");
 
                     b.Property<DateTime?>("PublishStartTime")
                         .HasColumnType("timestamp with time zone")
@@ -90,43 +131,6 @@ namespace List.Assignments.Migrations
                     b.ToTable("assignments");
                 });
 
-            modelBuilder.Entity("List.Assignments.Models.AssignmentGroupSetting", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Active")
-                        .HasColumnType("boolean")
-                        .HasColumnName("active");
-
-                    b.Property<int>("AssignmentId")
-                        .HasColumnType("integer")
-                        .HasColumnName("assignment_id");
-
-                    b.Property<int>("GroupId")
-                        .HasColumnType("integer")
-                        .HasColumnName("group_id");
-
-                    b.Property<DateTime?>("PublishStartTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("publish_start_time");
-
-                    b.Property<DateTime?>("UploadEndTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("upload_end_time");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssignmentId", "GroupId")
-                        .IsUnique();
-
-                    b.ToTable("assignment_group_settings");
-                });
-
             modelBuilder.Entity("List.Assignments.Models.AssignmentTaskRelModel", b =>
                 {
                     b.Property<int>("TaskId")
@@ -149,11 +153,58 @@ namespace List.Assignments.Migrations
                         .HasColumnType("double precision")
                         .HasColumnName("points_total");
 
+                    b.Property<int?>("ProjectSelectionLimit")
+                        .HasColumnType("integer")
+                        .HasColumnName("project_selection_limit");
+
                     b.HasKey("TaskId", "AssignmentId");
 
                     b.HasIndex("AssignmentId");
 
                     b.ToTable("assignment_task_rel");
+                });
+
+            modelBuilder.Entity("List.Assignments.Models.ProjectSelection", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssignmentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("assignment_id");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("student_id");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("integer")
+                        .HasColumnName("task_id");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("AssignmentId", "StudentId")
+                        .IsUnique();
+
+                    b.HasIndex("AssignmentId", "TaskId");
+
+                    b.ToTable("project_selections", (string)null);
                 });
 
             modelBuilder.Entity("List.Assignments.Models.SolutionModel", b =>
@@ -549,6 +600,10 @@ namespace List.Assignments.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<int?>("ParentTaskId")
+                        .HasColumnType("integer")
+                        .HasColumnName("parent_task_id");
+
                     b.Property<string>("Text")
                         .HasColumnType("text");
 
@@ -558,6 +613,8 @@ namespace List.Assignments.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AuthorId");
+
+                    b.HasIndex("ParentTaskId");
 
                     b.ToTable("tasks", null, t =>
                         {
@@ -587,6 +644,10 @@ namespace List.Assignments.Migrations
                         .HasColumnType("text")
                         .HasColumnName("full_name");
 
+                    b.Property<bool>("Inactive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("inactive ");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("text")
@@ -610,6 +671,17 @@ namespace List.Assignments.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
+                });
+
+            modelBuilder.Entity("List.Assignments.Models.AssignmentGroupSetting", b =>
+                {
+                    b.HasOne("List.Assignments.Models.AssignmentModel", "Assignment")
+                        .WithMany("GroupSettings")
+                        .HasForeignKey("AssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Assignment");
                 });
 
             modelBuilder.Entity("List.Assignments.Models.AssignmentModel", b =>
@@ -648,17 +720,6 @@ namespace List.Assignments.Migrations
                     b.Navigation("Teacher");
                 });
 
-            modelBuilder.Entity("List.Assignments.Models.AssignmentGroupSetting", b =>
-                {
-                    b.HasOne("List.Assignments.Models.AssignmentModel", "Assignment")
-                        .WithMany("GroupSettings")
-                        .HasForeignKey("AssignmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Assignment");
-                });
-
             modelBuilder.Entity("List.Assignments.Models.AssignmentTaskRelModel", b =>
                 {
                     b.HasOne("List.Assignments.Models.AssignmentModel", "Assignment")
@@ -674,6 +735,33 @@ namespace List.Assignments.Migrations
                         .IsRequired();
 
                     b.Navigation("Assignment");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("List.Assignments.Models.ProjectSelection", b =>
+                {
+                    b.HasOne("List.Assignments.Models.AssignmentModel", "Assignment")
+                        .WithMany("ProjectSelections")
+                        .HasForeignKey("AssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("List.Users.Models.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("List.Tasks.Models.TaskModel", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Assignment");
+
+                    b.Navigation("Student");
 
                     b.Navigation("Task");
                 });
@@ -807,12 +895,20 @@ namespace List.Assignments.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("List.Tasks.Models.TaskModel", "ParentTask")
+                        .WithMany("Variants")
+                        .HasForeignKey("ParentTaskId");
+
                     b.Navigation("Author");
+
+                    b.Navigation("ParentTask");
                 });
 
             modelBuilder.Entity("List.Assignments.Models.AssignmentModel", b =>
                 {
                     b.Navigation("GroupSettings");
+
+                    b.Navigation("ProjectSelections");
 
                     b.Navigation("Solutions");
                 });
@@ -842,6 +938,8 @@ namespace List.Assignments.Migrations
             modelBuilder.Entity("List.Tasks.Models.TaskModel", b =>
                 {
                     b.Navigation("TaskCategories");
+
+                    b.Navigation("Variants");
                 });
 #pragma warning restore 612, 618
         }
